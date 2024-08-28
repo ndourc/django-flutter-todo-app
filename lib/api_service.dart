@@ -92,12 +92,34 @@ class ApiService {
     }
   }
 
+/*
+Future<Task> updateTaskStatus(String id, bool status) async {
+    final response = await client.put(
+        Uri.parse(Urls.updateTask(id)),
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: json.encode({
+            'task_status': status,  // Only update the status field
+        }),
+    );
+
+    if (response.statusCode == 200) {
+        return Task.fromMap(json.decode(response.body));
+    } else {
+        print('Failed to update task status: ${response.body}');
+        throw Exception('Failed to update task status');
+    }
+}
+
+*/
+
   Future<void> deleteTask(String id) async {
     final response = await client.delete(Uri.parse(Urls.deleteTask(id)));
     if (response.statusCode == 204) {
       print('Task deleted successfully');
     } else {
-      print('Failed to delete task: ${response.body}');
+      //print('Failed to delete task: ${response.body}');
       throw Exception('Failed to delete task');
     }
   }
