@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'api_service.dart';
+import 'package:provider/provider.dart';
+// import 'api_service.dart';
 import 'app_colours.dart';
+import 'task_provider.dart';
 import 'textfield_input.dart';
 
 class AddTaskPage extends StatefulWidget {
@@ -14,17 +16,25 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
+  // bool _status = false;
 
   Future<void> _saveTask() async {
     if (_formKey.currentState!.validate()) {
       try {
-        await ApiService().createTask(
+        // Call the TaskProvider's addTask method
+        await Provider.of<TaskProvider>(context, listen: false).addTask(
           _titleController.text,
           _bodyController.text,
+          false, // Assuming the task is not completed initially
         );
+
+        // Close the dialog after adding the task
         Navigator.of(context).pop();
       } catch (e) {
         print('Failed to create task: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to create task: $e")),
+        );
       }
     }
   }
@@ -45,8 +55,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
               ),
               const SizedBox(height: 10),
               TextFieldInput(
-                textEditingController: _titleController,
-                hintText: 'Title of your task',
+                textEditingController: _bodyController,
+                hintText: 'Task description',
                 textInputType: TextInputType.text,
               ),
               const SizedBox(height: 15),

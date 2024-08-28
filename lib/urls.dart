@@ -5,5 +5,7 @@ class Urls {
   static String getTasks() => "$baseUrl/tasks/";
   static String getSingleTask(String id) => "$baseUrl/tasks/$id/";
   static String updateTask(String id) => "$baseUrl/tasks/$id/update/";
+  static String updateTaskStatus(String id) =>
+      "$baseUrl/tasks/$id/update-task-status/";
   static String deleteTask(String id) => "$baseUrl/tasks/$id/delete/";
 }

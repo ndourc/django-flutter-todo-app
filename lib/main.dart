@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:todo_frontend/task_page.dart';
+import 'edit_task_page.dart';
 import 'task_provider.dart';
 
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => TaskProvider(),
-      child: MyApp(),
-    ),
-  );
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => TaskProvider()),
+    ],
+    child: MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -19,12 +20,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Django Flutter Demo",
+      title: "To-Do App",
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: const TaskPage(),
-      routes: {},
+      routes: {
+        EditTaskPage.routeName: (context) => const EditTaskPage(),
+      },
     );
   }
 }

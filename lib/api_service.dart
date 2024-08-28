@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
 import 'models.dart';
 import 'urls.dart';
 
@@ -10,7 +9,7 @@ class ApiService {
   ApiService({http.Client? client}) : client = client ?? http.Client();
 
   // T A S K  C R U D  O P E R A T I O N S
-  Future<Task> createTask(String title, String body) async {
+  Future<Task> createTask(String title, String body, bool task_status) async {
     final response = await client.post(
       Uri.parse(Urls.createTask()),
       headers: {
@@ -19,12 +18,14 @@ class ApiService {
       body: json.encode({
         'title': title,
         'body': body,
+        'task_status': task_status, // Change here
       }),
     );
+
     if (response.statusCode == 201) {
       return Task.fromMap(json.decode(response.body));
     } else {
-      print('Failed to create job: ${response.body}');
+      print('Failed to create task: ${response.body}');
       throw Exception('Failed to create task');
     }
   }
@@ -32,10 +33,11 @@ class ApiService {
   Future<List<Task>> getTasks() async {
     final response = await client.get(Uri.parse(Urls.getTasks()));
     if (response.statusCode == 200) {
-      return json
-          .decode(response.body)
-          .map((json) => Task.fromMap(json))
-          .toList();
+      // Convert JSON response into List<Task>
+      final List<dynamic> jsonList = json.decode(response.body);
+      final List<Task> tasks =
+          jsonList.map((json) => Task.fromMap(json)).toList();
+      return tasks;
     } else {
       print('Failed to fetch tasks: ${response.body}');
       throw Exception('Failed to fetch tasks');
@@ -71,6 +73,25 @@ class ApiService {
     }
   }
 
+  Future<Task> updateTaskStatus(String id, bool task_status) async {
+    final response = await client.put(
+      Uri.parse(Urls.updateTask(id)),
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: json.encode({
+        'task_status': task_status, // Change here
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return Task.fromMap(json.decode(response.body));
+    } else {
+      print('Failed to update task status: ${response.body}');
+      throw Exception('Failed to update task status');
+    }
+  }
+
   Future<void> deleteTask(String id) async {
     final response = await client.delete(Uri.parse(Urls.deleteTask(id)));
     if (response.statusCode == 204) {
@@ -78,24 +99,6 @@ class ApiService {
     } else {
       print('Failed to delete task: ${response.body}');
       throw Exception('Failed to delete task');
-    }
-  }
-
-  Future<Task> updateTaskStatus(String id, bool status) async {
-    final response = await client.put(
-      Uri.parse(Urls.updateTask(id)),
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: json.encode({
-        'status': status,
-      }),
-    );
-    if (response.statusCode == 200) {
-      return Task.fromMap(json.decode(response.body));
-    } else {
-      print('Failed to update task status: ${response.body}');
-      throw Exception('Failed to update task status');
     }
   }
 }
