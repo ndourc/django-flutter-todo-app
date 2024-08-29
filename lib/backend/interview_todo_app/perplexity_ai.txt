@@ -1,0 +1,870 @@
+```#urls.py
+from django.urls import include, path
+from . import views
+
+urlpatterns = [
+    path('', views.getRoutes),
+
+    path('tasks/add-task/', views.add_task),
+    path('tasks/', views.get_tasks),
+    path('tasks/<str:pk>/', views.get_single_task),
+    path('tasks/<str:pk>/update/', views.update_task),
+    path('tasks/<str:pk>/update-task-status/', views.update_task_status),
+    path('tasks/<str:pk>/delete/', views.delete_task),
+]
+```
+
+```#models.py
+from django.db import models
+from .id_algos import generate_task_id
+
+
+class Task(models.Model):
+    id = models.CharField(primary_key=True, max_length=7, editable=False, default=generate_task_id)
+    title = models.CharField(max_length=100)
+    body = models.TextField()
+    task_status = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated']
+```
+
+```#views.py
+from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Task
+from .serializers import TaskSerializer
+
+@api_view(['GET'])
+def getRoutes(request):
+    routes = [
+        {
+            'Endpoint': '/todo_app',
+            'method': 'GET',
+            'body': None,
+            'description': 'Returns array of tasks'
+        },
+        {
+            'Endpoint': '/todo_app/id',
+            'method': 'GET',
+            'body': None,
+            'description': 'Returns a single task object'
+        },
+        {
+            'Endpoint': '/todo_app/create',
+            'method': 'POST',
+            'body': {'body': ""},
+            'description': 'Creates a new task object'
+        },
+        {
+            'Endpoint': '/todo_app/id/update',
+            'method': 'PUT',
+            'body': {'body': ""},
+            'description': 'Updates an existing task object'
+        },
+        {
+            'Endpoint': '/todo_app/id/delete',
+            'method': 'DELETE',
+            'body': {'body': ""},
+            'description': 'Creates a new task object'
+        },
+    ]
+    return Response(routes)
+
+
+@api_view(['POST'])
+def add_task(request):
+    data = request.data
+    task = Task.objects.create(
+        title=data.get('title'),
+        body=data.get('body'),
+        status=data.get('status', False)  # Default to False if status is not provided
+    )
+    serializer = TaskSerializer(task, many=False)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def get_tasks(request):
+    tasks = Task.objects.all()
+    serializer = TaskSerializer(tasks, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_single_task(request, pk):
+    task = Task.objects.get(id=pk)
+    serializer = TaskSerializer(task, many=False)
+    return Response(serializer.data)
+
+
+@api_view(['PUT'])
+def update_task(request, pk):
+    data = request.data
+    task = Task.objects.get(id=pk)
+    serializer = TaskSerializer(task, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    
+@api_view(['PUT'])
+def update_task_status(request, pk):
+    try:
+        task = Task.objects.get(id=pk)
+        task_status = request.data.get('task_status')  # Change here
+
+        if task_status is None:
+            return Response({'error': 'Task status not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        task.task_status = task_status  # Change here
+        task.save()
+        serializer = TaskSerializer(task, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Task.DoesNotExist:
+        return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error updating task status: {str(e)}")  # Log the error for debugging
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+
+@api_view(['DELETE'])
+def delete_task(request, pk):
+    try:
+        task = Task.objects.get(id=pk)
+        task.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Task.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+```
+
+```//add_task.decorators
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+// import 'api_service.dart';
+import 'app_colours.dart';
+import 'task_provider.dart';
+import 'textfield_input.dart';
+
+class AddTaskPage extends StatefulWidget {
+  const AddTaskPage({super.key});
+
+  @override
+  State<AddTaskPage> createState() => _AddTaskPageState();
+}
+
+class _AddTaskPageState extends State<AddTaskPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _bodyController = TextEditingController();
+  // bool _status = false;
+
+  Future<void> _saveTask() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        // Call the TaskProvider's addTask method
+        await Provider.of<TaskProvider>(context, listen: false).addTask(
+          _titleController.text,
+          _bodyController.text,
+          false, // Assuming the task is not completed initially
+        );
+
+        // Close the dialog after adding the task
+        Navigator.of(context).pop();
+      } catch (e) {
+        print('Failed to create task: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to create task: $e")),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add Task'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: ListBody(
+            children: [
+              TextFieldInput(
+                textEditingController: _titleController,
+                hintText: 'Title of your task',
+                textInputType: TextInputType.text,
+              ),
+              const SizedBox(height: 10),
+              TextFieldInput(
+                textEditingController: _bodyController,
+                hintText: 'Task description',
+                textInputType: TextInputType.text,
+              ),
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  TextButton(
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: AppColor.appBlackColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(width: 9),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.greenAccentColor,
+                    ),
+                    onPressed: _saveTask,
+                    child: Text(
+                      'Save',
+                      style: TextStyle(color: AppColor.appWhiteColor),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+```//api_service.dart
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'models.dart';
+import 'urls.dart';
+
+class ApiService {
+  final http.Client client;
+
+  ApiService({http.Client? client}) : client = client ?? http.Client();
+
+  // T A S K  C R U D  O P E R A T I O N S
+  Future<Task> createTask(String title, String body, bool task_status) async {
+    final response = await client.post(
+      Uri.parse(Urls.createTask()),
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: json.encode({
+        'title': title,
+        'body': body,
+        'task_status': task_status, // Change here
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return Task.fromMap(json.decode(response.body));
+    } else {
+      print('Failed to create task: ${response.body}');
+      throw Exception('Failed to create task');
+    }
+  }
+
+  Future<List<Task>> getTasks() async {
+    final response = await client.get(Uri.parse(Urls.getTasks()));
+    if (response.statusCode == 200) {
+      // Convert JSON response into List<Task>
+      final List<dynamic> jsonList = json.decode(response.body);
+      final List<Task> tasks =
+          jsonList.map((json) => Task.fromMap(json)).toList();
+      return tasks;
+    } else {
+      print('Failed to fetch tasks: ${response.body}');
+      throw Exception('Failed to fetch tasks');
+    }
+  }
+
+  Future<Task> getSingleTask(String id) async {
+    final response = await client.get(Uri.parse(Urls.getSingleTask(id)));
+    if (response.statusCode == 200) {
+      return Task.fromMap(json.decode(response.body));
+    } else {
+      print('Failed to fetch task: ${response.body}');
+      throw Exception('Failed to fetch task');
+    }
+  }
+
+  Future<Task> updateTask(String id, String title, String body) async {
+    final response = await client.put(
+      Uri.parse(Urls.updateTask(id)),
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: json.encode({
+        'title': title,
+        'body': body,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return Task.fromMap(json.decode(response.body));
+    } else {
+      print('Failed to update task: ${response.body}');
+      throw Exception('Failed to update task');
+    }
+  }
+
+  Future<Task> updateTaskStatus(String id, bool task_status) async {
+    final response = await client.put(
+      Uri.parse(Urls.updateTask(id)),
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: json.encode({
+        'task_status': task_status, // Change here
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return Task.fromMap(json.decode(response.body));
+    } else {
+      print('Failed to update task status: ${response.body}');
+      throw Exception('Failed to update task status');
+    }
+  }
+
+  Future<void> deleteTask(String id) async {
+    final response = await client.delete(Uri.parse(Urls.deleteTask(id)));
+    if (response.statusCode == 204) {
+      print('Task deleted successfully');
+    } else {
+      print('Failed to delete task: ${response.body}');
+      throw Exception('Failed to delete task');
+    }
+  }
+}
+```
+
+```//edit_task.dart
+import 'package:flutter/material.dart';
+
+import 'api_service.dart';
+import 'app_colours.dart';
+import 'models.dart';
+import 'textfield_input.dart';
+
+class EditTaskPage extends StatefulWidget {
+  static const routeName = '/edit-task';
+
+  const EditTaskPage({super.key});
+
+  @override
+  State<EditTaskPage> createState() => _EditTaskPageState();
+}
+
+class _EditTaskPageState extends State<EditTaskPage> {
+  late Task task;
+  final _formKey = GlobalKey<FormState>();
+
+  late TextEditingController titleController;
+  late TextEditingController bodyController;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    task = ModalRoute.of(context)!.settings.arguments as Task;
+    titleController = TextEditingController(text: task.title);
+    bodyController = TextEditingController(text: task.body);
+  }
+
+  Future<void> _saveForm() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+    }
+
+    Task updatedTask = task.copyWith(
+      title: titleController.text,
+      body: bodyController.text,
+    );
+
+    try {
+      await ApiService().updateTask(
+        updatedTask.id,
+        updatedTask.title,
+        updatedTask.body,
+      );
+
+      print("Task updated successfully: $updatedTask");
+      Navigator.pop(context);
+    } catch (e) {
+      print("Failed to update task: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to update task: $e")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('Edit task'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFieldInput(
+                    textEditingController: titleController,
+                    hintText: 'Title...',
+                    textInputType: TextInputType.text,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFieldInput(
+                    textEditingController: bodyController,
+                    hintText: 'Task description...',
+                    textInputType: TextInputType.text,
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      TextButton(
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(color: AppColor.appBlackColor),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      const SizedBox(width: 9),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.greenAccentColor,
+                        ),
+                        onPressed: _saveForm,
+                        child: Text(
+                          'Save',
+                          style: TextStyle(color: AppColor.appWhiteColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )),
+        ));
+  }
+}
+```
+
+```//main.dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_frontend/task_page.dart';
+import 'edit_task_page.dart';
+import 'task_provider.dart';
+
+void main() {
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => TaskProvider()),
+    ],
+    child: MyApp(),
+  ));
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "To-Do App",
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const TaskPage(),
+      routes: {
+        EditTaskPage.routeName: (context) => const EditTaskPage(),
+      },
+    );
+  }
+}
+```
+
+```//models.dart
+import 'dart:convert';
+
+class Task {
+  final String id;
+  final String title;
+  final String body;
+  final bool task_status; // Change here
+  final String lastUpdated;
+
+  Task({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.task_status, // Change here
+    required this.lastUpdated,
+  });
+
+  Task copyWith({
+    String? id,
+    String? title,
+    String? body,
+    bool? task_status, // Change here
+    String? lastUpdated,
+  }) {
+    return Task(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      task_status: task_status ?? this.task_status, // Change here
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'body': body,
+      'task_status': task_status, // Change here
+      'lastUpdated': lastUpdated,
+    };
+  }
+
+  factory Task.fromMap(Map<String, dynamic> map) {
+    return Task(
+      id: map['id'] ?? '',
+      title: map['title'] ?? '',
+      body: map['body'] ?? '',
+      task_status: map['task_status'] == true ||
+          map['task_status'] == 'true', // Change here
+      lastUpdated: map['lastUpdated'] ?? '',
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory Task.fromJson(String source) => Task.fromMap(json.decode(source));
+
+  @override
+  String toString() {
+    return 'Task(id: $id, title: $title, body: $body, task_status: $task_status, lastUpdated: $lastUpdated)'; // Change here
+  }
+}
+```
+
+```//task_page.dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+//import 'package:todo_frontend/api_service.dart';
+import 'package:todo_frontend/models.dart';
+import 'package:todo_frontend/task_provider.dart';
+import 'add_task_page.dart';
+import 'app_colours.dart';
+import 'edit_task_page.dart';
+//import 'hover_effect.dart';
+
+class TaskPage extends StatefulWidget {
+  const TaskPage({super.key});
+
+  @override
+  State<TaskPage> createState() => _TaskPageState();
+}
+
+class _TaskPageState extends State<TaskPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch tasks after the first frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<TaskProvider>(context, listen: false).fetchTasks();
+    });
+  }
+
+  void _addTask() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddTaskPage()),
+    ).then((_) {
+      Provider.of<TaskProvider>(context, listen: false).fetchTasks();
+    });
+  }
+
+  void _editTask(Task task) {
+    Navigator.pushNamed(context, EditTaskPage.routeName, arguments: task)
+        .then((_) {
+      Provider.of<TaskProvider>(context, listen: false).fetchTasks();
+    });
+  }
+
+  void _deleteTask(Task task) async {
+    await showDeleteConfirmationDialog(context, task);
+  }
+
+  Future<void> showDeleteConfirmationDialog(
+      BuildContext context, Task task) async {
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.delete, color: AppColor.appRedColor),
+                const SizedBox(width: 10),
+                const Text('Delete task'),
+              ],
+            ),
+            content: SingleChildScrollView(
+                child: ListBody(
+              children: [
+                const Text('Are you sure you want to delete this task?'),
+                const SizedBox(height: 10),
+                Text(
+                  'This action cannot be undone.',
+                  style: TextStyle(color: AppColor.appRedColor),
+                )
+              ],
+            )),
+            actions: [
+              TextButton(
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColor.appBlackColor),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColor.appRedColor,
+                ),
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: AppColor.appWhiteColor),
+                ),
+                onPressed: () {
+                  Provider.of<TaskProvider>(context, listen: false)
+                      .deleteTask(task.id);
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('To do App'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Consumer<TaskProvider>(
+          builder: (context, taskProvider, child) {
+            if (taskProvider.isLoading) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: AppColor.appWhiteColor,
+                ),
+              );
+            }
+            return Container(
+              margin: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                  color: AppColor.offBlackGreyColor,
+                  borderRadius: BorderRadius.circular(20)),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(children: [
+                        Container(
+                          decoration: BoxDecoration(
+                              color: AppColor.greenAccentColor,
+                              borderRadius: BorderRadius.circular(20)),
+                          height: 30,
+                          width: 5,
+                          padding: const EdgeInsets.all(20),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          "Your tasks",
+                          style: TextStyle(
+                              color: AppColor.appWhiteColor,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ]),
+                      ElevatedButton(
+                        onPressed: _addTask,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.greenAccentColor,
+                        ),
+                        child: Text(' Add Task',
+                            style: TextStyle(color: AppColor.appWhiteColor)),
+                      )
+                    ],
+                  ),
+                  Divider(
+                    thickness: 0.5,
+                    color: AppColor.appWhiteColor,
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: taskProvider.tasks.length,
+                      itemBuilder: (context, index) {
+                        final task = taskProvider.tasks[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            title: Text(task.title),
+                            subtitle: Text(task.lastUpdated),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  value: task.task_status, // Change here
+                                  onChanged: (bool? value) {
+                                    if (value != null) {
+                                      Provider.of<TaskProvider>(context,
+                                              listen: false)
+                                          .updateTaskStatus(task.id, value);
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => _editTask(task),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () => _deleteTask(task),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
+```//task_provider.dart
+import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'models.dart';
+
+class TaskProvider with ChangeNotifier {
+  List<Task> _tasks = [];
+  bool _isLoading = false;
+
+  bool get isLoading => _isLoading;
+
+  List<Task> get tasks => _tasks;
+
+  // Fetch tasks from the API
+  Future<void> fetchTasks() async {
+    _isLoading = true;
+    notifyListeners(); // Notify listeners before fetching
+    try {
+      final List<Task> fetchedTasks = await ApiService().getTasks();
+      _tasks = fetchedTasks;
+    } catch (e) {
+      print('Error fetching tasks: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners(); // Notify listeners after fetching
+    }
+  }
+
+  // Add a new task
+// Add a new task
+  Future<void> addTask(String title, String body, bool task_status) async {
+    try {
+      // Create the task using the API
+      Task newTask = await ApiService().createTask(title, body, task_status);
+
+      // Optionally, add the new task to the local list
+      _tasks.add(newTask);
+
+      // Notify listeners to update the UI
+      notifyListeners();
+    } catch (e) {
+      print('Error adding task: $e');
+    }
+  }
+
+  // Update a task
+  Future<void> updateTask(String id, String title, String body) async {
+    try {
+      await ApiService().updateTask(id, title, body);
+      await fetchTasks(); // Refresh the task list
+    } catch (e) {
+      print('Error updating task: $e');
+    }
+  }
+
+  // Delete a task
+  Future<void> deleteTask(String id) async {
+    try {
+      await ApiService().deleteTask(id);
+      await fetchTasks(); // Refresh the task list
+    } catch (e) {
+      print('Error deleting task: $e');
+    }
+  }
+
+  // Update task status (completion status)
+  Future<void> updateTaskStatus(String id, bool task_status) async {
+    try {
+      await ApiService().updateTaskStatus(id, task_status);
+      // Update the local task list to reflect the change
+      final taskIndex = _tasks.indexWhere((task) => task.id == id);
+      if (taskIndex != -1) {
+        _tasks[taskIndex] =
+            _tasks[taskIndex].copyWith(task_status: task_status);
+      }
+      notifyListeners(); // Notify listeners after updating status
+    } catch (e) {
+      print('Error updating task status: $e');
+    }
+  }
+}
+```
+
+```//urls.dart
+class Urls {
+  static const String baseUrl = "http://127.0.0.1:8000";
+
+  static String createTask() => "$baseUrl/tasks/add-task/";
+  static String getTasks() => "$baseUrl/tasks/";
+  static String getSingleTask(String id) => "$baseUrl/tasks/$id/";
+  static String updateTask(String id) => "$baseUrl/tasks/$id/update/";
+  static String updateTaskStatus(String id) =>
+      "$baseUrl/tasks/$id/update-task-status/";
+  static String deleteTask(String id) => "$baseUrl/tasks/$id/delete/";
+}
+```
