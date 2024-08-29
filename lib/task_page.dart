@@ -22,9 +22,12 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   void _editTask(Task task) {
+    print('Navigating to edit task: ${task.title}');
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => EditTaskPage()),
+      MaterialPageRoute(
+        builder: (context) => EditTaskPage(task: task), // Pass the task object
+      ),
     ).then((_) {
       Provider.of<TaskProvider>(context, listen: false).fetchTasks();
     });

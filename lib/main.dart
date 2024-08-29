@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:todo_frontend/task_page.dart';
 import 'edit_task_page.dart';
 import 'task_provider.dart';
+import 'models.dart'; // Make sure to import the Task model
 
 void main() {
   runApp(MultiProvider(
@@ -25,8 +26,16 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: const TaskPage(),
-      routes: {
-        EditTaskPage.routeName: (context) => const EditTaskPage(),
+      onGenerateRoute: (settings) {
+        if (settings.name == EditTaskPage.routeName) {
+          final task = settings.arguments as Task;
+          return MaterialPageRoute(
+            builder: (context) {
+              return EditTaskPage(task: task);
+            },
+          );
+        }
+        return null;
       },
     );
   }

@@ -8,25 +8,40 @@ import 'textfield_input.dart';
 class EditTaskPage extends StatefulWidget {
   static const routeName = '/edit-task';
 
-  const EditTaskPage({super.key});
+  final Task task;
+
+  const EditTaskPage({super.key, required this.task});
 
   @override
-  State<EditTaskPage> createState() => _EditTaskPageState();
+  _EditTaskPageState createState() => _EditTaskPageState();
 }
 
 class _EditTaskPageState extends State<EditTaskPage> {
-  late Task task;
-  final _formKey = GlobalKey<FormState>();
-
   late TextEditingController titleController;
   late TextEditingController bodyController;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers
+    titleController = TextEditingController();
+    bodyController = TextEditingController();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    task = ModalRoute.of(context)!.settings.arguments as Task;
-    titleController = TextEditingController(text: task.title);
-    bodyController = TextEditingController(text: task.body);
+    // Populate controllers with task data
+    titleController.text = widget.task.title;
+    bodyController.text = widget.task.body;
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    bodyController.dispose();
+    super.dispose();
   }
 
   Future<void> _saveForm() async {
@@ -34,7 +49,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
       _formKey.currentState!.save();
     }
 
-    Task updatedTask = task.copyWith(
+    Task updatedTask = widget.task.copyWith(
       title: titleController.text,
       body: bodyController.text,
     );
