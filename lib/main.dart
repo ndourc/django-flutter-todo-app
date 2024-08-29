@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:todo_frontend/task_page.dart';
 import 'edit_task_page.dart';
 import 'task_provider.dart';
-import 'models.dart'; // Make sure to import the Task model
+import 'models.dart';
 
 void main() {
   runApp(MultiProvider(

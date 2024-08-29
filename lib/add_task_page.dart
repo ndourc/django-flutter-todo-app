@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'api_service.dart';
 import 'app_colours.dart';
 import 'task_provider.dart';
 import 'textfield_input.dart';
@@ -16,19 +15,16 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
-  // bool _status = false;
 
   Future<void> _saveTask() async {
     if (_formKey.currentState!.validate()) {
       try {
-        // Call the TaskProvider's addTask method
         await Provider.of<TaskProvider>(context, listen: false).addTask(
           _titleController.text,
           _bodyController.text,
           false, // Assuming the task is not completed initially
         );
 
-        // Close the dialog after adding the task
         Navigator.of(context).pop();
       } catch (e) {
         print('Failed to create task: $e');

@@ -18,7 +18,7 @@ class ApiService {
       body: json.encode({
         'title': title,
         'body': body,
-        'task_status': task_status, // Change here
+        'task_status': task_status,
       }),
     );
 
@@ -33,7 +33,6 @@ class ApiService {
   Future<List<Task>> getTasks() async {
     final response = await client.get(Uri.parse(Urls.getTasks()));
     if (response.statusCode == 200) {
-      // Convert JSON response into List<Task>
       final List<dynamic> jsonList = json.decode(response.body);
       final List<Task> tasks =
           jsonList.map((json) => Task.fromMap(json)).toList();
@@ -80,7 +79,7 @@ class ApiService {
         'Content-Type': 'application/json; charset=utf-8',
       },
       body: json.encode({
-        'task_status': task_status, // Change here
+        'task_status': task_status,
       }),
     );
 
@@ -91,28 +90,6 @@ class ApiService {
       throw Exception('Failed to update task status');
     }
   }
-
-/*
-Future<Task> updateTaskStatus(String id, bool status) async {
-    final response = await client.put(
-        Uri.parse(Urls.updateTask(id)),
-        headers: {
-            'Content-Type': 'application/json; charset=utf-8',
-        },
-        body: json.encode({
-            'task_status': status,  // Only update the status field
-        }),
-    );
-
-    if (response.statusCode == 200) {
-        return Task.fromMap(json.decode(response.body));
-    } else {
-        print('Failed to update task status: ${response.body}');
-        throw Exception('Failed to update task status');
-    }
-}
-
-*/
 
   Future<void> deleteTask(String id) async {
     final response = await client.delete(Uri.parse(Urls.deleteTask(id)));

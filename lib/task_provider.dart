@@ -38,10 +38,9 @@ class TaskProvider with ChangeNotifier {
       final apiService = ApiService(client: http.Client());
       await apiService.updateTaskStatus(id, task_status);
 
-      // Update the local task status in the list
       final taskIndex = _tasks.indexWhere((task) => task.id == id);
       if (taskIndex >= 0) {
-        _tasks[taskIndex].task_status = task_status; // Update the task_status
+        _tasks[taskIndex].task_status = task_status;
         notifyListeners();
       }
     } catch (e) {

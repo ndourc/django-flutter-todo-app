@@ -4,14 +4,14 @@ class Task {
   final String id;
   final String title;
   final String body;
-  bool task_status; // Change here
+  bool task_status;
   final String lastUpdated;
 
   Task({
     required this.id,
     required this.title,
     required this.body,
-    required this.task_status, // Change here
+    required this.task_status,
     required this.lastUpdated,
   });
 
@@ -19,14 +19,14 @@ class Task {
     String? id,
     String? title,
     String? body,
-    bool? task_status, // Change here
+    bool? task_status,
     String? lastUpdated,
   }) {
     return Task(
       id: id ?? this.id,
       title: title ?? this.title,
       body: body ?? this.body,
-      task_status: task_status ?? this.task_status, // Change here
+      task_status: task_status ?? this.task_status,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
@@ -36,7 +36,7 @@ class Task {
       'id': id,
       'title': title,
       'body': body,
-      'task_status': task_status, // Change here
+      'task_status': task_status,
       'lastUpdated': lastUpdated,
     };
   }
@@ -46,8 +46,7 @@ class Task {
       id: map['id'] ?? '',
       title: map['title'] ?? '',
       body: map['body'] ?? '',
-      task_status: map['task_status'] == true ||
-          map['task_status'] == 'true', // Change here
+      task_status: map['task_status'] == true || map['task_status'] == 'true',
       lastUpdated: map['lastUpdated'] ?? '',
     );
   }
@@ -58,6 +57,6 @@ class Task {
 
   @override
   String toString() {
-    return 'Task(id: $id, title: $title, body: $body, task_status: $task_status, lastUpdated: $lastUpdated)'; // Change here
+    return 'Task(id: $id, title: $title, body: $body, task_status: $task_status, lastUpdated: $lastUpdated)';
   }
 }

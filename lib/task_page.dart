@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'models.dart';
 import 'task_provider.dart';
 import 'edit_task_page.dart';
-import 'add_task_page.dart'; // Import the AddTaskPage
+import 'add_task_page.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -26,7 +26,7 @@ class _TaskPageState extends State<TaskPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditTaskPage(task: task), // Pass the task object
+        builder: (context) => EditTaskPage(task: task),
       ),
     ).then((_) {
       Provider.of<TaskProvider>(context, listen: false).fetchTasks();
@@ -50,7 +50,7 @@ class _TaskPageState extends State<TaskPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: _addTask, // Navigate to AddTaskPage
+            onPressed: _addTask,
           ),
         ],
       ),

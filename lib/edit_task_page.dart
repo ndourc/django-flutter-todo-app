@@ -24,7 +24,6 @@ class _EditTaskPageState extends State<EditTaskPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize controllers
     titleController = TextEditingController();
     bodyController = TextEditingController();
   }
@@ -32,7 +31,6 @@ class _EditTaskPageState extends State<EditTaskPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Populate controllers with task data
     titleController.text = widget.task.title;
     bodyController.text = widget.task.body;
   }
